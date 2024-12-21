@@ -4,12 +4,12 @@ import torch
 import numpy as np
 import time
 from torchvision import transforms
-from torchvision.models import resnet18
+from torchvision.models import mobilenet_v2
 from torch.nn.functional import cosine_similarity
 
 # Configuration
 training_dir = "training_data"
-threshold = 0.7  # Similarity threshold for recognition
+threshold = 0.65  # Similarity threshold for recognition
 capture_delay = 5  # Minimum delay in seconds between captures for the same person
 
 # Transformation pipeline
@@ -21,7 +21,7 @@ transform = transforms.Compose([
 ])
 
 
-model = resnet18(pretrained=True)
+model = mobilenet_v2(pretrained=True)
 model.fc = torch.nn.Identity()  # Remove classification layer
 model.eval()
 
@@ -73,11 +73,13 @@ def run_face_recognition():
     cap = cv2.VideoCapture(0)
 
     frame_count = 0
+    unknowncount = 0
     while True:
         ret, frame = cap.read()
         if not ret:
             break
-
+        checkval = "unset"
+        
         if frame_count % 15 == 0:  
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
@@ -112,7 +114,18 @@ def run_face_recognition():
                     if name not in last_capture_time or current_time - last_capture_time[name] > capture_delay:
                         save_new_photo(name, face)
                         last_capture_time[name] = current_time
-
+                if (name == "Unknown"):
+                    unknowncount += 1
+                if (unknowncount == 30):
+                    print("initiate alert to phone") #replace with message to phone
+                    unknowncount = 0
+                if (name != "Unknown"):
+                    unknowncount = 0
+                    
+               # if (name == "Unknown" and checkval != "pending_unknown"):
+                    #checkval = "pending_unknown"
+                
+                
         frame_count += 1
 
         # Display the frame
@@ -158,6 +171,13 @@ def run_face_recognition_only():
                 else:
                     name = "Unknown"
 
+                if (name == "Unknown"):
+                    unknowncount += 1
+                if (unknowncount == 30):
+                    print("initiate alert to phone") #replace with message to phone
+                    unknowncount = 0
+                if (name != "Unknown"):
+                    unknowncount = 0
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
 
