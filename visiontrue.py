@@ -148,7 +148,7 @@ class FaceRecognitionSystem:
         self.known_embeddings, self.known_labels = load_training_data()
         self.recent_predictions = []
         self.last_capture_time = {}
-        self.unknown_count = 0
+        self.unknown_count= 0
 
     def get_prediction(self, face_embedding):
         if not self.known_embeddings:
@@ -164,21 +164,24 @@ class FaceRecognitionSystem:
             print(f"Error in get_prediction: {e}")
         return "Unknown", 0.0
 
-    
+    def recognised_after_alert(self):
+        self.unknown_count = -200
+    def recognise_process_restart(self):
+        self.unknown_count = 0
     def run_recognition(self, training_mode=False):
         try:
             cap = cv2.VideoCapture(0)
             if not cap.isOpened():
                 print("Error: Could not open camera")
                 return
-    
+            
             frame_count = 0  # Counter for frames
-    
+            
             while True:
                 ret, frame = cap.read()
                 if not ret or frame is None:
                     break
-    
+                
                 frame_count += 1  # Increment frame counter
     
                 if frame_count % 15 == 0:  # Run recognition every 15 frames to minimize resources. In the actual implementation ,we wont need to display the screen at full frame rate
@@ -187,6 +190,7 @@ class FaceRecognitionSystem:
                     frame_count = 0
                     if boxes is not None:
                         for box in boxes:
+                            
                             x, y, x2, y2 = [int(b) for b in box]
                             face = rgb_frame[y:y2, x:x2]
                             processed_face = preprocess_face(face)
@@ -194,7 +198,11 @@ class FaceRecognitionSystem:
                                 face_embedding = extract_embedding(processed_face)
                                 name, confidence = self.get_prediction(face_embedding)
                                 print(f"Recognized: {name} ({confidence:.2f})")  # Print recognized person to console
-    
+                                if (name == "Unknown"):
+                                    self.unknown_count += 1
+                                else:
+                                    self.unknown_count = 0
+                                
                                 if training_mode and name != "Unknown":
                                     add_new_face_to_cache(name, face)
                                     print("face added to existing person cache")
@@ -203,7 +211,9 @@ class FaceRecognitionSystem:
                                 cv2.rectangle(frame, (x, y), (x2, y2), color, 2)
                                 cv2.putText(frame, f"{name} ({confidence:.2f})", (x, y - 10),
                                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-    
+                                if (self.unknown_count > 25):#change param as appropriate
+                                    print("send alert to phone")
+                                    self.unknown_count = 0
                 cv2.imshow("Face Recognition", frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
