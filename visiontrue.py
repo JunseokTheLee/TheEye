@@ -184,7 +184,7 @@ class FaceRecognitionSystem:
                 if frame_count % 15 == 0:  # Run recognition every 15 frames to minimize resources. In the actual implementation ,we wont need to display the screen at full frame rate
                     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     boxes, _ = mtcnn.detect(Image.fromarray(rgb_frame))
-    
+                    frame_count = 0
                     if boxes is not None:
                         for box in boxes:
                             x, y, x2, y2 = [int(b) for b in box]
