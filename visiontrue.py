@@ -195,9 +195,9 @@ class FaceRecognitionSystem:
                                 name, confidence = self.get_prediction(face_embedding)
                                 print(f"Recognized: {name} ({confidence:.2f})")  # Print recognized person to console
     
-                                if training_mode and name == "Unknown":
-                                    add_new_face_to_cache("NewFace", face)
-                                    print("New face added to cache")
+                                if training_mode and name != "Unknown":
+                                    add_new_face_to_cache(name, face)
+                                    print("face added to existing person cache")
     
                                 color = (0, 255, 0) if name != "Unknown" else (0, 0, 255)
                                 cv2.rectangle(frame, (x, y), (x2, y2), color, 2)
